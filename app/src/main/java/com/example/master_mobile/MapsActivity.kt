@@ -50,7 +50,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         // Add a marker in Sydney and move the camera
         val singapore = LatLng(1.35, 103.87)
         mMap.addMarker(MarkerOptions().position(singapore).title("Marker in Singapore"))
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(singapore))
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(singapore, 12F))
+        mMap.uiSettings.isZoomControlsEnabled = true
 
         addHeatMap()
     }
