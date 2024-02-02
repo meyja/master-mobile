@@ -7,4 +7,10 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <color name="Xanthous">#ffc759</color>
+    <color name="RosePompadour">#ff7b9c</color>
+    <color name="Glaucous">#607196</color>
+    <color name="FrenchGray">#babfd1</color>
+    <color name="AntiFlashWhite">#e8e9ed</color>
 </resources>
