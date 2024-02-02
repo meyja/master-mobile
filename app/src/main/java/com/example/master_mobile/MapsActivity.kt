@@ -56,6 +56,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         addHeatMap()
     }
 
+    // source: https://developers.google.com/maps/documentation/android-sdk/utility/heatmap
     private fun addHeatMap() {
         var latLngs: List<LatLng?>? = null
 
