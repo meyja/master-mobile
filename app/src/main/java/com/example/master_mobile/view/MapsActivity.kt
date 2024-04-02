@@ -2,6 +2,7 @@ package com.example.master_mobile.view
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RawRes
 import com.example.master_mobile.R
@@ -20,6 +21,7 @@ import org.json.JSONArray
 import org.json.JSONException
 import java.util.Scanner
 
+const val TAG = "MapsActivity"
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private lateinit var mMap: GoogleMap
@@ -99,6 +101,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private fun getStressData(){
 
         mapsRepository = MapsRepository()
+        Log.d(TAG, "getStressData: start GET...")
         mapsRepository.getStressData()
 
 
