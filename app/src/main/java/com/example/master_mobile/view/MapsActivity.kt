@@ -1,9 +1,10 @@
-package com.example.master_mobile
+package com.example.master_mobile.view
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Toast
 import androidx.annotation.RawRes
+import com.example.master_mobile.R
 
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
