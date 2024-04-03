@@ -1,32 +1,32 @@
 package com.example.master_mobile.view
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RawRes
+import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.ViewModelProvider
 import com.example.master_mobile.R
-
+import com.example.master_mobile.databinding.ActivityMapsBinding
+import com.example.master_mobile.viewModel.MapsViewModel
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
-import com.example.master_mobile.databinding.ActivityMapsBinding
-import com.example.master_mobile.model.repository.MapsRepository
 import com.google.android.gms.maps.model.TileOverlayOptions
 import com.google.maps.android.heatmaps.HeatmapTileProvider
 import org.json.JSONArray
 import org.json.JSONException
 import java.util.Scanner
 
+
 const val TAG = "MapsActivity"
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private lateinit var mMap: GoogleMap
     private lateinit var binding: ActivityMapsBinding
-    private lateinit var mapsRepository: MapsRepository
+    private lateinit var viewModel: MapsViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,11 +34,16 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         binding = ActivityMapsBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        viewModel = ViewModelProvider(this).get(MapsViewModel::class.java)
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
+        // Observe the LiveData for stress data
+        viewModel.stressDataList.observe(this, {data ->
+            //use stress data here...
+        })
     }
 
     /**
@@ -53,8 +58,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
 
-        getStressData()
-        // Add a marker in Sydney and move the camera
         val singapore = LatLng(1.35, 103.87)
         mMap.addMarker(MarkerOptions().position(singapore).title("Marker in Singapore"))
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(singapore, 12F))
@@ -96,14 +99,5 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             result.add(LatLng(lat, lng))
         }
         return result
-    }
-
-    private fun getStressData(){
-
-        mapsRepository = MapsRepository()
-        Log.d(TAG, "getStressData: start GET...")
-        mapsRepository.getStressData()
-
-
     }
 }

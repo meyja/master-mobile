@@ -1,7 +1,5 @@
 package com.example.master_mobile.model
 
-import java.sql.Timestamp
-
 data class StressData(
     val stressLevel: String,
     val lat: String,

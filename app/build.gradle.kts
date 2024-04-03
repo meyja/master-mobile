@@ -98,4 +98,10 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-test-manifest")
     implementation("com.squareup.okhttp3:okhttp:4.11.0")
     implementation("com.google.code.gson:gson:2.10.1")
+
+    // ViewModel and LiveData
+    implementation ("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")
+    implementation ("androidx.lifecycle:lifecycle-livedata-ktx:2.7.0")
+    implementation ("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
+
 }

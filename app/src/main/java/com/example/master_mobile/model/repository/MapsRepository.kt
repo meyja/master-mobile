@@ -17,8 +17,15 @@ const val TAG = "MapsRepository"
 class MapsRepository() {
     private val client = OkHttpClient()
     private val baseUrl = "https://mongoapi-lr9d.onrender.com"
+    interface StressDataCallback {
+        // Called when request succeeds
+        fun onSuccess(data: List<TempStressData>)
 
-    fun getStressData() {
+        // Called when request fails
+        fun onError(e: IOException)
+    }
+
+    fun getStressData(callBack: StressDataCallback) {
         Log.d(TAG, "getStressData: requesting..")
 
         // Create client builder instance
@@ -33,25 +40,36 @@ class MapsRepository() {
             .url("$baseUrl/all")
             .build()
 
+        // fetch stress data and pass back via StressDataCallback
         client.newCall(request).enqueue(object : Callback{
+            // onFailure is called by the OkHttpClient if the request fails (network problem or request cancelled)
             override fun onFailure(call: Call, e: IOException) {
+                callBack.onError(e)
                 e.printStackTrace()
             }
 
+            // onResponse is called by the OkHttpClient if the server responds (either successfully or with an error code)
             override fun onResponse(call: Call, response: Response) {
                 response.use{
-                    if(!response.isSuccessful) throw IOException("Unexpected code $response")
+                    if(!response.isSuccessful) {
+                        // Server responded with an error code
+                        callBack.onError(IOException("Unexpected code $response"))
+                        return
+                    }
                     
                     val result = response.body?.string() ?: ""
-                    Log.d(TAG, "onResponse: result-> $result")
+                    Log.d(TAG, "onResponse: result: $result")
                     
                     // use Gson to parse JSON to kotlin objects
                     val gson = Gson()
                     
                     val stressDataListType = object: TypeToken<Array<TempStressData>>(){}.type
-                    val stressDataList: Array<TempStressData> = gson.fromJson(result,stressDataListType)
+                    val stressDataList: List<TempStressData> = gson.fromJson(result,stressDataListType)
 
-                    Log.d(TAG, "onResponse: stressDataList: ${stressDataList.get(0)}")
+                    Log.d(TAG, "onResponse: stressDataList: ${stressDataList[0]}")
+
+                    // Return parsed dat through the callback
+                    callBack.onSuccess(stressDataList)
                 }
             }
         })
