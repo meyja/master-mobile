@@ -1,12 +1,13 @@
 package com.example.master_mobile.view
 
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RawRes
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.ViewModelProvider
 import com.example.master_mobile.R
 import com.example.master_mobile.databinding.ActivityMapsBinding
+import com.example.master_mobile.model.repository.MapsRepository
 import com.example.master_mobile.viewModel.MapsViewModel
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -14,6 +15,7 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.maps.model.TileOverlay
 import com.google.android.gms.maps.model.TileOverlayOptions
 import com.google.maps.android.heatmaps.HeatmapTileProvider
 import org.json.JSONArray
@@ -22,28 +24,36 @@ import java.util.Scanner
 
 
 const val TAG = "MapsActivity"
+
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private lateinit var mMap: GoogleMap
     private lateinit var binding: ActivityMapsBinding
     private lateinit var viewModel: MapsViewModel
+    private var heatMapOverlay: TileOverlay? = null
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         binding = ActivityMapsBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        viewModel = ViewModelProvider(this).get(MapsViewModel::class.java)
+        val mapsRepository = MapsRepository()
+
+        viewModel = MapsViewModel(mapsRepository)
+
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        val mapFragment = supportFragmentManager
-            .findFragmentById(R.id.map) as SupportMapFragment
+        val mapFragment = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
         // Observe the LiveData for stress data
-        viewModel.stressDataList.observe(this, {data ->
-            //use stress data here...
-        })
+        viewModel.stressDataList.observe(this) { newData ->
+            // This callback will be invoked whenever the stressDataList changes.
+            // Update the heatmap with the new data.
+            newData?.let { it ->
+                updateHeatMap(it.map { data -> LatLng(data.lat.toDouble(), data.lon.toDouble()) })
+            }
+        }
     }
 
     /**
@@ -58,9 +68,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
 
-        val singapore = LatLng(1.35, 103.87)
-        mMap.addMarker(MarkerOptions().position(singapore).title("Marker in Singapore"))
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(singapore, 12F))
+        val oslo = LatLng(59.9, 10.75)
+        mMap.addMarker(MarkerOptions().position(oslo).title("Marker in Oslo"))
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(oslo, 12F))
         mMap.uiSettings.isZoomControlsEnabled = true
 
         addHeatMap()
@@ -68,24 +78,52 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     // source: https://developers.google.com/maps/documentation/android-sdk/utility/heatmap
     private fun addHeatMap() {
-        var latLngs: List<LatLng?>? = null
-
+        var osloLatLon = emptyList<LatLng?>()
         // Get the data: latitude/longitude positions of police stations.
         try {
-            latLngs = readItems(R.raw.coordinates)
+            osloLatLon = readItems(R.raw.coordinates)
+
+
         } catch (e: JSONException) {
-            Toast.makeText(this, "Problem reading list of locations.", Toast.LENGTH_LONG)
-                .show()
+            Toast.makeText(this, "Problem reading list of locations.", Toast.LENGTH_LONG).show()
         }
+        /*
+        var latLngs: List<LatLng?>? = null
+        latLngs = viewModel.getLatLongs()
+        Log.d(TAG, "addHeatMap: latLngs: $latLngs")
+
+        if (latLngs == emptyList<LatLng>()) latLngs = osloLatLon
 
         // Create a heat map tile provider, passing it the latlngs
-        val provider = HeatmapTileProvider.Builder()
-            .data(latLngs)
-            .build()
+        val provider = HeatmapTileProvider.Builder().data(latLngs).build()
 
         // Add a tile overlay to the map, using the heat map tile provider.
         mMap.addTileOverlay(TileOverlayOptions().tileProvider(provider))
+
+         */
+
+        // Initial data, can be an empty list.
+        //val initialData = emptyList<LatLng>()
+        val initialData = osloLatLon
+        val heatmapTileProvider = HeatmapTileProvider.Builder()
+            .data(initialData)
+            .build()
+        heatMapOverlay = mMap.addTileOverlay(TileOverlayOptions().tileProvider(heatmapTileProvider))
     }
+
+    fun updateHeatMap(newLatLons: List<LatLng>) {
+        // Clear the old heatmap
+        heatMapOverlay?.remove()
+
+        // Create a heat map tile provider, passing it the new data.
+        val heatmapTileProvider = HeatmapTileProvider.Builder()
+            .data(newLatLons)
+            .build()
+
+        // Add a tile overlay to the map, using the new heat map tile provider.
+        heatMapOverlay = mMap.addTileOverlay(TileOverlayOptions().tileProvider(heatmapTileProvider))
+    }
+
     @Throws(JSONException::class)
     private fun readItems(@RawRes resource: Int): List<LatLng?> {
         val result: MutableList<LatLng?> = ArrayList()

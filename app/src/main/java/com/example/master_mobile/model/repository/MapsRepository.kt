@@ -62,9 +62,11 @@ class MapsRepository() {
                     
                     // use Gson to parse JSON to kotlin objects
                     val gson = Gson()
-                    
-                    val stressDataListType = object: TypeToken<Array<TempStressData>>(){}.type
-                    val stressDataList: List<TempStressData> = gson.fromJson(result,stressDataListType)
+
+                    val stressDataListType = object : TypeToken<Array<TempStressData>>() {}.type
+                    val stressDataArray: Array<TempStressData> = gson.fromJson(result, stressDataListType)
+                    val stressDataList: List<TempStressData> = stressDataArray.toList()
+
 
                     Log.d(TAG, "onResponse: stressDataList: ${stressDataList[0]}")
 
