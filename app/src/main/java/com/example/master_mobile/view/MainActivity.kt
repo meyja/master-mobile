@@ -1,4 +1,4 @@
-package com.example.master_mobile
+package com.example.master_mobile.view
 
 import android.content.Intent
 import android.os.Bundle
@@ -16,3 +16,9 @@ class MainActivity : ComponentActivity() {
         startActivity(intent)
     }
 }
+
+/*
+model: api + repositories
+view: all composables
+viewmodel: all viewmodels
+ */
