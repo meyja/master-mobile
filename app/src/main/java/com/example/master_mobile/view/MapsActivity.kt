@@ -2,8 +2,6 @@ package com.example.master_mobile.view
 
 import android.os.Bundle
 import android.util.Log
-import android.widget.Toast
-import androidx.annotation.RawRes
 import androidx.appcompat.app.AppCompatActivity
 import com.example.master_mobile.R
 import com.example.master_mobile.databinding.ActivityMapsBinding
@@ -18,9 +16,6 @@ import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.maps.model.TileOverlay
 import com.google.android.gms.maps.model.TileOverlayOptions
 import com.google.maps.android.heatmaps.HeatmapTileProvider
-import org.json.JSONArray
-import org.json.JSONException
-import java.util.Scanner
 
 
 const val TAG = "MapsActivity"
@@ -51,7 +46,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             // This callback will be invoked whenever the stressDataList changes.
             // Update the heatmap with the new data.
             newData?.let { it ->
-                updateHeatMap(it.map { data -> LatLng(data.lat.toDouble(), data.lon.toDouble()) })
+                updateHeatMap(it.map { data -> LatLng(data.lat.toDouble(), data.lon.toDouble()) } as ArrayList<LatLng>)
+
             }
         }
     }
@@ -73,12 +69,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(oslo, 12F))
         mMap.uiSettings.isZoomControlsEnabled = true
 
-        addHeatMap()
     }
+    /*
 
     // source: https://developers.google.com/maps/documentation/android-sdk/utility/heatmap
     private fun addHeatMap() {
-        var osloLatLon = emptyList<LatLng?>()
+        var osloLatLon = arrayListOf<LatLng>()
         // Get the data: latitude/longitude positions of police stations.
         try {
             osloLatLon = readItems(R.raw.coordinates)
@@ -104,14 +100,20 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         // Initial data, can be an empty list.
         //val initialData = emptyList<LatLng>()
-        val initialData = osloLatLon
+        //val initialData = osloLatLon
+        Log.d(TAG, "addHeatMap: latLons before: $latLons")
+        latLons.addAll(osloLatLon)
+        Log.d(TAG, "addHeatMap: latLons after: $latLons")
         val heatmapTileProvider = HeatmapTileProvider.Builder()
-            .data(initialData)
+            .data(latLons)
             .build()
         heatMapOverlay = mMap.addTileOverlay(TileOverlayOptions().tileProvider(heatmapTileProvider))
     }
 
-    fun updateHeatMap(newLatLons: List<LatLng>) {
+     */
+
+    fun updateHeatMap(newLatLons: ArrayList<LatLng>) {
+        Log.d(TAG, "updateHeatMap: newLatLons: $newLatLons")
         // Clear the old heatmap
         heatMapOverlay?.remove()
 
@@ -122,20 +124,5 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         // Add a tile overlay to the map, using the new heat map tile provider.
         heatMapOverlay = mMap.addTileOverlay(TileOverlayOptions().tileProvider(heatmapTileProvider))
-    }
-
-    @Throws(JSONException::class)
-    private fun readItems(@RawRes resource: Int): List<LatLng?> {
-        val result: MutableList<LatLng?> = ArrayList()
-        val inputStream = this.resources.openRawResource(resource)
-        val json = Scanner(inputStream).useDelimiter("\\A").next()
-        val array = JSONArray(json)
-        for (i in 0 until array.length()) {
-            val `object` = array.getJSONObject(i)
-            val lat = `object`.getDouble("lat")
-            val lng = `object`.getDouble("lng")
-            result.add(LatLng(lat, lng))
-        }
-        return result
     }
 }
