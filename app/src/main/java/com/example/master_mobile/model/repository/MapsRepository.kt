@@ -1,7 +1,7 @@
 package com.example.master_mobile.model.repository
 
 import android.util.Log
-import com.example.master_mobile.model.TempStressData
+import com.example.master_mobile.model.StressData
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import okhttp3.Call
@@ -10,6 +10,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
 import java.io.IOException
+import java.util.Date
 import java.util.concurrent.TimeUnit
 
 const val TAG = "MapsRepository"
@@ -19,10 +20,18 @@ class MapsRepository() {
     private val baseUrl = "https://mongoapi-lr9d.onrender.com"
     interface StressDataCallback {
         // Called when request succeeds
-        fun onSuccess(data: List<TempStressData>)
+        fun onSuccess(data: List<StressData>)
 
         // Called when request fails
         fun onError(e: IOException)
+    }
+
+    fun getStressDataInDateRange(startDate: Long, endDate: Long){
+        //TODO: datoene må sendes i stringformat til endepunkt
+        //unix
+
+        //endeupuntk /between
+        // start og end
     }
 
     fun getStressData(callBack: StressDataCallback) {
@@ -63,9 +72,9 @@ class MapsRepository() {
                     // use Gson to parse JSON to kotlin objects
                     val gson = Gson()
 
-                    val stressDataListType = object : TypeToken<Array<TempStressData>>() {}.type
-                    val stressDataArray: Array<TempStressData> = gson.fromJson(result, stressDataListType)
-                    val stressDataList: List<TempStressData> = stressDataArray.toList()
+                    val stressDataListType = object : TypeToken<Array<StressData>>() {}.type
+                    val stressDataArray: Array<StressData> = gson.fromJson(result, stressDataListType)
+                    val stressDataList: List<StressData> = stressDataArray.toList()
 
 
                     Log.d(TAG, "onResponse: stressDataList: ${stressDataList[0]}")
