@@ -26,7 +26,7 @@ class MapsViewModel(
     private fun fetchStressData() {
         // call getStressData with callback to handle the response
         mapsRepository.getStressData(object : MapsRepository.StressDataCallback {
-            override fun onSuccess(data: List<StressData>) {
+            override fun onSuccess(data: ArrayList<StressData>) {
                 //mutableStressData.postValue(data as ArrayList<StressData>?)
                 postStressData(data)
             }
@@ -40,7 +40,7 @@ class MapsViewModel(
 
     fun fetchStressDataInDataRange(startDate: Long, endDate: Long) {
         mapsRepository.getStressDataInDateRange(startDate, endDate, object: MapsRepository.StressDataCallback{
-            override fun onSuccess(data: List<StressData>) {
+            override fun onSuccess(data: ArrayList<StressData>) {
                 //mutableStressData.postValue(data as ArrayList<StressData>?)
                 postStressData(data)
             }
@@ -53,7 +53,7 @@ class MapsViewModel(
         })
     }
 
-    private fun postStressData(data: List<StressData>){
+    private fun postStressData(data: ArrayList<StressData>){
         mutableStressData.postValue(data as ArrayList<StressData>?)
     }
 
