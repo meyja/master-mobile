@@ -6,22 +6,6 @@ import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import com.example.master_mobile.R
 import com.example.master_mobile.databinding.ActivityMapsBinding
 import com.example.master_mobile.model.repository.MapsRepository
@@ -34,10 +18,12 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.maps.model.TileOverlay
 import com.google.android.gms.maps.model.TileOverlayOptions
+import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.maps.android.heatmaps.HeatmapTileProvider
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.platform.ComposeView
-
+import androidx.core.util.Pair
+import com.google.android.material.datepicker.CalendarConstraints
+import java.util.Calendar
+import java.util.TimeZone
 
 const val TAG = "MapsActivity"
 
@@ -47,6 +33,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var binding: ActivityMapsBinding
     private lateinit var viewModel: MapsViewModel
     private var heatMapOverlay: TileOverlay? = null
+    private var latLons: ArrayList<LatLng> = arrayListOf()
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -67,16 +54,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             // This callback will be invoked whenever the stressDataList changes.
             // Update the heatmap with the new data.
             newData?.let { it ->
-                updateHeatMap(it.map { data ->
+                latLons = it.map { data ->
                     LatLng(
-                        data.lat.toDouble(),
-                        data.lon.toDouble()
+                        data.lat.toDouble(), data.lon.toDouble()
                     )
-                } as ArrayList<LatLng>)
-
+                } as ArrayList<LatLng>
+                updateHeatMap()
             }
-        }
-        /*
+        }/*
 
         setContent {
             MastermobileTheme {
@@ -95,15 +80,67 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when(item.itemId) {
-        R.id.refresh ->{
-            true
+        return when (item.itemId) {
+            R.id.refresh -> {
+                updateHeatMap()
+                true
+            }
+
+            R.id.select_date -> {
+                launchDateRangePicker()
+                true
+            }
+
+            else -> super.onOptionsItemSelected(item)
         }
-        R.id.select_date ->{
-            true
+    }
+
+    fun launchDateRangePicker() {
+        val today = MaterialDatePicker.todayInUtcMilliseconds()
+        val calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT+2"))
+
+        calendar.timeInMillis = today
+        calendar[Calendar.MONTH] = Calendar.JANUARY
+
+        val janThisYear = calendar.timeInMillis
+        val constraintsBuilder = CalendarConstraints.Builder()
+            .setStart(janThisYear)
+            .setEnd(today)
+
+        // init date picker
+        val dateRangePicker =
+            MaterialDatePicker.Builder.dateRangePicker()
+                .setTitleText("Select dates")
+                .setSelection(
+                    Pair(
+                        MaterialDatePicker.thisMonthInUtcMilliseconds(),
+                        MaterialDatePicker.todayInUtcMilliseconds()
+                    ))
+                .setCalendarConstraints(constraintsBuilder.build())
+                .build()
+
+
+        dateRangePicker.show(supportFragmentManager, TAG)
+
+        dateRangePicker.addOnPositiveButtonClickListener {
+            // Respond to positive button click.
+            Log.d(TAG, "launchDateRangePicker: positive click")
         }
-        else -> super.onOptionsItemSelected(item)
+        dateRangePicker.addOnNegativeButtonClickListener {
+            // Respond to negative button click.
+            Log.d(TAG, "launchDateRangePicker: negative click")
         }
+        dateRangePicker.addOnCancelListener {
+            // Respond to cancel button click.
+            Log.d(TAG, "launchDateRangePicker: cancel click")
+        }
+        dateRangePicker.addOnDismissListener {
+            // Respond to dismiss events.
+            Log.d(TAG, "launchDateRangePicker: dismiss click")
+        }
+
+        Log.d(TAG, "launchDateRangePicker: selection ${dateRangePicker.selection}")
+
     }
 
     /**
@@ -123,8 +160,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(oslo, 12F))
         mMap.uiSettings.isZoomControlsEnabled = true
 
-    }
-    /*
+    }/*
 
     // source: https://developers.google.com/maps/documentation/android-sdk/utility/heatmap
     private fun addHeatMap() {
@@ -166,62 +202,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
      */
 
-    fun updateHeatMap(newLatLons: ArrayList<LatLng>) {
-        Log.d(TAG, "updateHeatMap: newLatLons: $newLatLons")
+    fun updateHeatMap() {
+        Log.d(TAG, "updateHeatMap: UPDATING")
         // Clear the old heatmap
         heatMapOverlay?.remove()
 
         // Create a heat map tile provider, passing it the new data.
-        val heatmapTileProvider = HeatmapTileProvider.Builder()
-            .data(newLatLons)
-            .build()
+        val heatmapTileProvider = HeatmapTileProvider.Builder().data(latLons).build()
 
         // Add a tile overlay to the map, using the new heat map tile provider.
         heatMapOverlay = mMap.addTileOverlay(TileOverlayOptions().tileProvider(heatmapTileProvider))
-    }
-
-    @Composable
-    fun MapsApp() {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            SmallTopAppBar()
-        }
-    }
-
-    @OptIn(ExperimentalMaterial3Api::class)
-    @Composable
-    fun SmallTopAppBar() {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        titleContentColor = MaterialTheme.colorScheme.primary,
-                    ),
-                    title = {
-                        Text("Small Top App Bar")
-                    },
-
-                    actions = {
-                        IconButton(onClick = {/*do something*/ }) {
-                            Icon(Icons.Filled.Refresh, contentDescription = "Localized description")
-                        }
-                        IconButton(onClick = { /*TODO*/ }) {
-                            Icon(
-                                Icons.Filled.DateRange,
-                                contentDescription = "Localized description"
-                            )
-
-                        }
-
-                    }
-                )
-            },
-        ) { innerPadding ->
-            //ScrollContent(innerPadding)
-        }
     }
 }
