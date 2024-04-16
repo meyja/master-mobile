@@ -22,6 +22,7 @@ import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.maps.android.heatmaps.HeatmapTileProvider
 import androidx.core.util.Pair
 import com.google.android.material.datepicker.CalendarConstraints
+import com.google.android.material.datepicker.DateValidatorPointBackward
 import java.util.Calendar
 import java.util.TimeZone
 
@@ -61,17 +62,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 } as ArrayList<LatLng>
                 updateHeatMap()
             }
-        }/*
-
-        setContent {
-            MastermobileTheme {
-                MapsApp()
-            }
         }
-
-         */
-
     }
+
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         val inflater: MenuInflater = menuInflater
@@ -98,33 +91,48 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     fun launchDateRangePicker() {
         val today = MaterialDatePicker.todayInUtcMilliseconds()
         val calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT+2"))
+        val oneDayInMillis = (24 * 60 * 60 * 1000)// Number of milliseconds in one day
+        val yesterday = today - oneDayInMillis
 
+
+        // constraining calendar from start to end of current year
         calendar.timeInMillis = today
         calendar[Calendar.MONTH] = Calendar.JANUARY
-
         val janThisYear = calendar.timeInMillis
+
+        calendar.timeInMillis = today
+        calendar[Calendar.MONTH] = Calendar.DECEMBER
+        val decThisYear = calendar.timeInMillis
+
+        // building constraings
         val constraintsBuilder = CalendarConstraints.Builder()
             .setStart(janThisYear)
-            .setEnd(today)
+            .setEnd(decThisYear)
+            .setFirstDayOfWeek(Calendar.MONDAY)
+            .setValidator(DateValidatorPointBackward.now())
 
         // init date picker
         val dateRangePicker =
             MaterialDatePicker.Builder.dateRangePicker()
                 .setTitleText("Select dates")
                 .setSelection(
+                    // sets default range from yesterday -> today
                     Pair(
-                        MaterialDatePicker.thisMonthInUtcMilliseconds(),
-                        MaterialDatePicker.todayInUtcMilliseconds()
+                        yesterday,
+                        today
                     ))
                 .setCalendarConstraints(constraintsBuilder.build())
                 .build()
 
-
+        // display date picker
         dateRangePicker.show(supportFragmentManager, TAG)
 
         dateRangePicker.addOnPositiveButtonClickListener {
-            // Respond to positive button click.
-            Log.d(TAG, "launchDateRangePicker: positive click")
+            // Respond to positive button click - save
+            Log.d(TAG, "launchDateRangePicker: positive click for value ${dateRangePicker.selection}")
+
+            viewModel.fetchStressDataInDataRange(dateRangePicker.selection!!.first, dateRangePicker.selection!!.second)
+
         }
         dateRangePicker.addOnNegativeButtonClickListener {
             // Respond to negative button click.
@@ -137,9 +145,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         dateRangePicker.addOnDismissListener {
             // Respond to dismiss events.
             Log.d(TAG, "launchDateRangePicker: dismiss click")
+
         }
 
-        Log.d(TAG, "launchDateRangePicker: selection ${dateRangePicker.selection}")
+        //Log.d(TAG, "launchDateRangePicker: selection ${dateRangePicker.selection}")
+
+        //TODO: sørge for at hvis samme dag er valgt, akka ingen range, må man konvertere til samme dag, men fra 00:00-23:59
 
     }
 
@@ -160,47 +171,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(oslo, 12F))
         mMap.uiSettings.isZoomControlsEnabled = true
 
-    }/*
-
-    // source: https://developers.google.com/maps/documentation/android-sdk/utility/heatmap
-    private fun addHeatMap() {
-        var osloLatLon = arrayListOf<LatLng>()
-        // Get the data: latitude/longitude positions of police stations.
-        try {
-            osloLatLon = readItems(R.raw.coordinates)
-
-
-        } catch (e: JSONException) {
-            Toast.makeText(this, "Problem reading list of locations.", Toast.LENGTH_LONG).show()
-        }
-        /*
-        var latLngs: List<LatLng?>? = null
-        latLngs = viewModel.getLatLongs()
-        Log.d(TAG, "addHeatMap: latLngs: $latLngs")
-
-        if (latLngs == emptyList<LatLng>()) latLngs = osloLatLon
-
-        // Create a heat map tile provider, passing it the latlngs
-        val provider = HeatmapTileProvider.Builder().data(latLngs).build()
-
-        // Add a tile overlay to the map, using the heat map tile provider.
-        mMap.addTileOverlay(TileOverlayOptions().tileProvider(provider))
-
-         */
-
-        // Initial data, can be an empty list.
-        //val initialData = emptyList<LatLng>()
-        //val initialData = osloLatLon
-        Log.d(TAG, "addHeatMap: latLons before: $latLons")
-        latLons.addAll(osloLatLon)
-        Log.d(TAG, "addHeatMap: latLons after: $latLons")
-        val heatmapTileProvider = HeatmapTileProvider.Builder()
-            .data(latLons)
-            .build()
-        heatMapOverlay = mMap.addTileOverlay(TileOverlayOptions().tileProvider(heatmapTileProvider))
     }
-
-     */
 
     fun updateHeatMap() {
         Log.d(TAG, "updateHeatMap: UPDATING")
