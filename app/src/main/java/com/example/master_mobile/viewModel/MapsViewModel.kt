@@ -25,7 +25,11 @@ class MapsViewModel(
     }
 
     /**
-     * Fetching stressdata within the last 24 hours
+     * Fetches stress data for the last 24 hours and updates the stress data live data.
+     *
+     * This method retrieves stress data points from the past 24 hours using the `MapsRepository`.
+     * The retrieved data is then posted to the `mutableStressData` LiveData to update the UI.
+     * In case of errors during data fetching, the error is posted to the `error` LiveData for handling.
      */
     fun fetchStressDataLast24Hrs(){
         mapsRepository.getStressDataLast24Hrs(object : MapsRepository.StressDataCallback {
@@ -42,7 +46,11 @@ class MapsViewModel(
     }
 
     /**
-     * Fetching all stressdata within the database
+     * Fetches all stress data within the database and updates the stress data live data.
+     *
+     * This method retrieves all stress data points from the data source using the `MapsRepository`.
+     * The retrieved data is then posted to the `mutableStressData` LiveData to update the UI.
+     * In case of errors during data fetching, the error is posted to the `error` LiveData for handling.
      */
     private fun fetchStressDataAll() {
         // call getStressData with callback to handle the response
@@ -60,7 +68,15 @@ class MapsViewModel(
     }
 
     /**
-     * Fetching stressdata withing a selected data range
+     * Fetches stress data within a selected date range and updates the stress data live data.
+     *
+     * This method retrieves stress data points within the provided `startDate` and `endDate` range
+     * using the `MapsRepository`. It also handles the case where the user selects a single day.
+     * The retrieved data is then posted to the `mutableStressData` LiveData to update the UI.
+     * In case of errors during data fetching, the error is posted to the `error` LiveData for handling.
+     *
+     * @param startDate The start date of the range in milliseconds.
+     * @param endDate The end date of the range in milliseconds.
      */
     fun fetchStressDataInDataRange(startDate: Long, endDate: Long) {
         // if startDate = endDate, convert the two to date at start of day and date at end of day respectively
@@ -85,7 +101,9 @@ class MapsViewModel(
     }
 
     /**
-     * Convert a date to two dates, where one is the start of day and the other is the end of day
+     * Converts a date to two dates, where one is the start of the day and the other is the end of the day.
+     * @param date The date to convert
+     * @return A Pair of Long values representing the start and end of the day in milliseconds
      */
     fun getStartAndEndOfDate(date: Long): Pair<Long, Long> {
         val dateInMilliSeconds = date // your date in milli time
@@ -112,10 +130,18 @@ class MapsViewModel(
         return Pair(startOfDayInMilliSeconds, endOfDayInMilliSeconds)
     }
 
+    /**
+     * Posts the updated stress data to the live data
+     * @param data The updated stress data
+     */
     private fun postStressData(data: ArrayList<StressData>){
         mutableStressData.postValue(data as ArrayList<StressData>?)
     }
 
+    /**
+     * Posts an error to the live data
+     * @param e The IOException to be posted as an error
+     */
     private fun postError(e: IOException){
         error.postValue(e)
     }
