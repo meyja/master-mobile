@@ -20,10 +20,30 @@ class MapsViewModel(
 
     // when MapsViewModel is created, fetch stress data
     init {
-        fetchStressData()
+        fetchStressDataLast24Hrs()
     }
 
-    private fun fetchStressData() {
+    /**
+     * Fetching stressdata within the last 24 hours
+     */
+    fun fetchStressDataLast24Hrs(){
+        mapsRepository.getStressDataLast24Hrs(object : MapsRepository.StressDataCallback {
+            override fun onSuccess(data: ArrayList<StressData>) {
+                //mutableStressData.postValue(data as ArrayList<StressData>?)
+                postStressData(data)
+            }
+
+            override fun onError(e: IOException) {
+                //error.postValue(e)
+                postError(e)
+            }
+        })
+    }
+
+    /**
+     * Fetching all stressdata within the database
+     */
+    private fun fetchStressDataAll() {
         // call getStressData with callback to handle the response
         mapsRepository.getStressData(object : MapsRepository.StressDataCallback {
             override fun onSuccess(data: ArrayList<StressData>) {
@@ -38,6 +58,9 @@ class MapsViewModel(
         })
     }
 
+    /**
+     * Fetching stressdata withing a selected data range
+     */
     fun fetchStressDataInDataRange(startDate: Long, endDate: Long) {
         mapsRepository.getStressDataInDateRange(startDate, endDate, object: MapsRepository.StressDataCallback{
             override fun onSuccess(data: ArrayList<StressData>) {
@@ -49,7 +72,6 @@ class MapsViewModel(
                 //error.postValue(e)
                 postError(e)
             }
-
         })
     }
 

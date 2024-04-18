@@ -11,6 +11,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
 import java.io.IOException
+import java.util.Calendar
 import java.util.concurrent.TimeUnit
 
 const val TAG = "MapsRepository"
@@ -60,12 +61,10 @@ class MapsRepository() {
                     // use Gson to parse JSON to kotlin objects
                     val gson = Gson()
 
-
                     //TODO se på castingen her, det er shait
                     val stressDataListType = object : TypeToken<Array<StressData>>() {}.type
                     val stressDataArray: Array<StressData> = gson.fromJson(result, stressDataListType)
                     val stressDataList: ArrayList<StressData> = ArrayList(stressDataArray.toList())
-
 
                     Log.d(TAG, "onResponse: stressDataList: ${stressDataList}")
 
@@ -77,56 +76,43 @@ class MapsRepository() {
     }
 
     fun getStressDataInDateRange(startDate: Long, endDate: Long, callBack: StressDataCallback){
+        // if startDate = endDate, convert the two to date at start of day and date at end of day respectively
+        // if not the same, use the original values from parameters
+        val (newStartDate, newEndDate) = if (startDate == endDate) {
+            getStartAndEndOfDate(startDate)
+        } else {
+            startDate to endDate
+        }
+
+        Log.d(TAG, "getStressDataInDateRange: requesting for $newStartDate - $newEndDate")
         val httpUrl = HttpUrl.Builder()
             .scheme("https")
             .host(baseUrl)
             .addPathSegment("between")
-            .addQueryParameter("start", startDate.toString())
-            .addQueryParameter("end", endDate.toString())
+            .addQueryParameter("start", newStartDate.toString())
+            .addQueryParameter("end", newEndDate.toString())
             .build()
-
-        Log.d(TAG, "getStressDataInDateRange: requesting for $startDate, - $endDate")
-
-        /*
-        client.newCall(request).enqueue(object : Callback{
-            override fun onFailure(call: Call, e: IOException) {
-                callBack.onError(e)
-                e.printStackTrace()
-            }
-            
-            override fun onResponse(call: Call, response: Response) {
-                response.use{
-                    if(!response.isSuccessful) {
-                        // Server responded with an error code
-                        callBack.onError(IOException("Unexpected code $response"))
-                        return
-                    }
-
-                    val result = response.body?.string() ?: ""
-                    Log.d(TAG, "onResponse: result: $result")
-
-                    // use Gson to parse JSON to kotlin objects
-                    val gson = Gson()
-
-                    val stressDataListType = object : TypeToken<Array<StressData>>() {}.type
-                    val stressDataArray: Array<StressData> = gson.fromJson(result, stressDataListType)
-                    val stressDataList: List<StressData> = stressDataArray.toList()
-
-
-                    Log.d(TAG, "onResponse: stressDataList: ${stressDataList}")
-
-                    // Return parsed dat through the callback
-                    callBack.onSuccess(stressDataList)
-                }
-            }
-
-
-        })
-         */
 
         getResponse(httpUrl, callBack)
     }
 
+    /**
+     * Get stressdata within the last 24 hours
+     */
+    fun getStressDataLast24Hrs(callBack: StressDataCallback){
+        Log.d(TAG, "getStressDataLast24Hrs: get data last 24 hours")
+        val httpUrl = HttpUrl.Builder()
+            .scheme("https")
+            .host(baseUrl)
+            .addPathSegment("last24h")
+            .build()
+
+        getResponse(httpUrl, callBack)
+    }
+
+    /**
+     * Get all stresssdata
+     */
     fun getStressData(callBack: StressDataCallback) {
         val httpUrl = HttpUrl.Builder()
             .scheme("https")
@@ -135,43 +121,33 @@ class MapsRepository() {
             .build()
 
         getResponse(httpUrl, callBack)
+    }
 
-        /*
-        client.newCall(request).enqueue(object : Callback{
-            // onFailure is called by the OkHttpClient if the request fails (network problem or request cancelled)
-            override fun onFailure(call: Call, e: IOException) {
-                callBack.onError(e)
-                e.printStackTrace()
-            }
+    /**
+     * Convert a date to two dates, where one is the start of day and the other is the end of day
+     */
+    fun getStartAndEndOfDate(date: Long): Pair<Long, Long> {
+        val dateInMilliSeconds = date // your date in milli time
+        val cal = Calendar.getInstance()
 
-            // onResponse is called by the OkHttpClient if the server responds (either successfully or with an error code)
-            override fun onResponse(call: Call, response: Response) {
-                response.use{
-                    if(!response.isSuccessful) {
-                        // Server responded with an error code
-                        callBack.onError(IOException("Unexpected code $response"))
-                        return
-                    }
-                    
-                    val result = response.body?.string() ?: ""
-                    Log.d(TAG, "onResponse: result: $result")
-                    
-                    // use Gson to parse JSON to kotlin objects
-                    val gson = Gson()
+        // set the calendar time to your date
+        cal.timeInMillis = dateInMilliSeconds
 
-                    val stressDataListType = object : TypeToken<Array<StressData>>() {}.type
-                    val stressDataArray: Array<StressData> = gson.fromJson(result, stressDataListType)
-                    val stressDataList: List<StressData> = stressDataArray.toList()
+        // get start of the day
+        cal.set(Calendar.HOUR_OF_DAY, 0)
+        cal.set(Calendar.MINUTE, 0)
+        cal.set(Calendar.SECOND, 0)
+        cal.set(Calendar.MILLISECOND, 0)
+        val startOfDayInMilliSeconds = cal.timeInMillis
+        println(startOfDayInMilliSeconds)
 
-
-                    Log.d(TAG, "onResponse: stressDataList: ${stressDataList[0]}")
-
-                    // Return parsed dat through the callback
-                    callBack.onSuccess(stressDataList)
-                }
-            }
-        })
-
-         */
+        // get end of the day
+        cal.set(Calendar.HOUR_OF_DAY, 23)
+        cal.set(Calendar.MINUTE, 59)
+        cal.set(Calendar.SECOND, 59)
+        cal.set(Calendar.MILLISECOND, 999)
+        val endOfDayInMilliSeconds = cal.timeInMillis
+        println(endOfDayInMilliSeconds)
+        return Pair(startOfDayInMilliSeconds, endOfDayInMilliSeconds)
     }
 }

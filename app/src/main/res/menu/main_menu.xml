@@ -2,10 +2,10 @@
 <menu
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
-    <item android:id="@+id/refresh"
-        android:title="Refresh"
-        android:icon="@drawable/baseline_refresh_24"
-        app:showAsAction="always"/>
+    <item android:id="@+id/today"
+        android:title="Today"
+        android:icon="@drawable/baseline_today_24"
+        app:showAsAction="ifRoom|withText"/>
     <item android:id="@+id/select_date"
         android:title="Select Date"
         android:icon="@drawable/baseline_edit_calendar_24"

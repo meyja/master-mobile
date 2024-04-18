@@ -34,7 +34,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var binding: ActivityMapsBinding
     private lateinit var viewModel: MapsViewModel
     private var heatMapOverlay: TileOverlay? = null
-    private var latLons: ArrayList<LatLng> = arrayListOf()
+    private lateinit var latLons: ArrayList<LatLng>
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -52,16 +52,28 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         // Observe the LiveData for stress data
         viewModel.stressDataList.observe(this) { newData ->
+            Log.d(TAG, "onCreate: empty lat lons")
+            latLons = arrayListOf()
             // This callback will be invoked whenever the stressDataList changes.
             // Update the heatmap with the new data.
-            newData?.let { it ->
-                latLons = it.map { data ->
+            // Check if newData is not null and not empty
+            if (!newData.isNullOrEmpty()) {
+                Log.d(TAG, "onCreate: newData: $newData")
+                
+                // This callback will be invoked whenever the stressDataList changes.
+                // Update the heatmap with the new data.
+                latLons = newData.map { data ->
                     LatLng(
-                        data.lat.toDouble(), data.lon.toDouble()
+                        data.lat.toDouble(),
+                        data.lon.toDouble()
                     )
                 } as ArrayList<LatLng>
-                updateHeatMap()
+            } else {
+                Log.d(TAG, "onCreate: newData is empty")
+                // Handle the case when newData is null or empty
+                // This could be showing a default view, or a message, etc.
             }
+                updateHeatMap()
         }
     }
 
@@ -74,16 +86,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
-            R.id.refresh -> {
-                updateHeatMap()
+            R.id.today -> {
+                getLast24Hrs()
                 true
             }
-
             R.id.select_date -> {
                 launchDateRangePicker()
                 true
             }
-
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -105,24 +115,16 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         val decThisYear = calendar.timeInMillis
 
         // building constraings
-        val constraintsBuilder = CalendarConstraints.Builder()
-            .setStart(janThisYear)
-            .setEnd(decThisYear)
-            .setFirstDayOfWeek(Calendar.MONDAY)
-            .setValidator(DateValidatorPointBackward.now())
+        val constraintsBuilder =
+            CalendarConstraints.Builder().setStart(janThisYear).setEnd(decThisYear)
+                .setFirstDayOfWeek(Calendar.MONDAY).setValidator(DateValidatorPointBackward.now())
 
         // init date picker
         val dateRangePicker =
-            MaterialDatePicker.Builder.dateRangePicker()
-                .setTitleText("Select dates")
-                .setSelection(
+            MaterialDatePicker.Builder.dateRangePicker().setTitleText("Select dates").setSelection(
                     // sets default range from yesterday -> today
-                    Pair(
-                        yesterday,
-                        today
-                    ))
-                .setCalendarConstraints(constraintsBuilder.build())
-                .build()
+                    Pair(yesterday, today)
+                ).setCalendarConstraints(constraintsBuilder.build()).build()
 
         // display date picker
         dateRangePicker.show(supportFragmentManager, TAG)
@@ -131,9 +133,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             // Respond to positive button click - save
             Log.d(TAG, "launchDateRangePicker: positive click for value ${dateRangePicker.selection}")
 
+            // get data in selected date range
             viewModel.fetchStressDataInDataRange(dateRangePicker.selection!!.first, dateRangePicker.selection!!.second)
+            Log.d(TAG, "launchDateRangePicker: selected date: ${dateRangePicker.selection!!.first} - ${dateRangePicker.selection!!.second}")
 
         }
+        /*
         dateRangePicker.addOnNegativeButtonClickListener {
             // Respond to negative button click.
             Log.d(TAG, "launchDateRangePicker: negative click")
@@ -147,11 +152,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             Log.d(TAG, "launchDateRangePicker: dismiss click")
 
         }
-
+        */
         //Log.d(TAG, "launchDateRangePicker: selection ${dateRangePicker.selection}")
 
         //TODO: sørge for at hvis samme dag er valgt, akka ingen range, må man konvertere til samme dag, men fra 00:00-23:59
-
     }
 
     /**
@@ -175,13 +179,25 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     fun updateHeatMap() {
         Log.d(TAG, "updateHeatMap: UPDATING")
+
         // Clear the old heatmap
         heatMapOverlay?.remove()
 
-        // Create a heat map tile provider, passing it the new data.
-        val heatmapTileProvider = HeatmapTileProvider.Builder().data(latLons).build()
+        if (!latLons.isEmpty()) {
+            Log.d(TAG, "updateHeatMap: latlon: $latLons")
 
-        // Add a tile overlay to the map, using the new heat map tile provider.
-        heatMapOverlay = mMap.addTileOverlay(TileOverlayOptions().tileProvider(heatmapTileProvider))
+            // Create a heat map tile provider, passing it the new data.
+            val heatmapTileProvider = HeatmapTileProvider.Builder().data(latLons).build()
+
+            // Add a tile overlay to the map, using the new heat map tile provider.
+            heatMapOverlay =
+                mMap.addTileOverlay(TileOverlayOptions().tileProvider(heatmapTileProvider))
+        } else{
+            Log.d(TAG, "updateHeatMap: no data in db selected date :)")
+        }
+    }
+
+    fun getLast24Hrs(){
+        viewModel.fetchStressDataLast24Hrs()
     }
 }
