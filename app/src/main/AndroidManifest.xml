@@ -35,15 +35,14 @@
         <activity
             android:name=".view.MapsActivity"
             android:exported="false"
-            android:label="@string/title_activity_maps"
-            android:theme="@style/Theme.Mastermobile"/>
+            android:label=""
+            android:theme="@style/Theme.Material3.DayNight"/>
         <activity
             android:name=".view.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.Mastermobile">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
