@@ -76,21 +76,13 @@ class MapsRepository() {
     }
 
     fun getStressDataInDateRange(startDate: Long, endDate: Long, callBack: StressDataCallback){
-        // if startDate = endDate, convert the two to date at start of day and date at end of day respectively
-        // if not the same, use the original values from parameters
-        val (newStartDate, newEndDate) = if (startDate == endDate) {
-            getStartAndEndOfDate(startDate)
-        } else {
-            startDate to endDate
-        }
-
-        Log.d(TAG, "getStressDataInDateRange: requesting for $newStartDate - $newEndDate")
+        Log.d(TAG, "getStressDataInDateRange: requesting for $startDate - $endDate")
         val httpUrl = HttpUrl.Builder()
             .scheme("https")
             .host(baseUrl)
             .addPathSegment("between")
-            .addQueryParameter("start", newStartDate.toString())
-            .addQueryParameter("end", newEndDate.toString())
+            .addQueryParameter("start", startDate.toString())
+            .addQueryParameter("end", endDate.toString())
             .build()
 
         getResponse(httpUrl, callBack)
@@ -123,31 +115,6 @@ class MapsRepository() {
         getResponse(httpUrl, callBack)
     }
 
-    /**
-     * Convert a date to two dates, where one is the start of day and the other is the end of day
-     */
-    fun getStartAndEndOfDate(date: Long): Pair<Long, Long> {
-        val dateInMilliSeconds = date // your date in milli time
-        val cal = Calendar.getInstance()
 
-        // set the calendar time to your date
-        cal.timeInMillis = dateInMilliSeconds
 
-        // get start of the day
-        cal.set(Calendar.HOUR_OF_DAY, 0)
-        cal.set(Calendar.MINUTE, 0)
-        cal.set(Calendar.SECOND, 0)
-        cal.set(Calendar.MILLISECOND, 0)
-        val startOfDayInMilliSeconds = cal.timeInMillis
-        println(startOfDayInMilliSeconds)
-
-        // get end of the day
-        cal.set(Calendar.HOUR_OF_DAY, 23)
-        cal.set(Calendar.MINUTE, 59)
-        cal.set(Calendar.SECOND, 59)
-        cal.set(Calendar.MILLISECOND, 999)
-        val endOfDayInMilliSeconds = cal.timeInMillis
-        println(endOfDayInMilliSeconds)
-        return Pair(startOfDayInMilliSeconds, endOfDayInMilliSeconds)
-    }
 }

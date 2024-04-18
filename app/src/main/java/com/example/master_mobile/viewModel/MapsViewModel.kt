@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import com.example.master_mobile.model.StressData
 import com.example.master_mobile.model.repository.MapsRepository
 import java.io.IOException
+import java.util.Calendar
 
 const val TAG = "MapsViewModel"
 
@@ -62,7 +63,15 @@ class MapsViewModel(
      * Fetching stressdata withing a selected data range
      */
     fun fetchStressDataInDataRange(startDate: Long, endDate: Long) {
-        mapsRepository.getStressDataInDateRange(startDate, endDate, object: MapsRepository.StressDataCallback{
+        // if startDate = endDate, convert the two to date at start of day and date at end of day respectively
+        // if not the same, use the original values from parameters
+        val (newStartDate, newEndDate) = if (startDate == endDate) {
+            getStartAndEndOfDate(startDate)
+        } else {
+            startDate to endDate
+        }
+
+        mapsRepository.getStressDataInDateRange(newStartDate, newEndDate, object: MapsRepository.StressDataCallback{
             override fun onSuccess(data: ArrayList<StressData>) {
                 //mutableStressData.postValue(data as ArrayList<StressData>?)
                 postStressData(data)
@@ -73,6 +82,34 @@ class MapsViewModel(
                 postError(e)
             }
         })
+    }
+
+    /**
+     * Convert a date to two dates, where one is the start of day and the other is the end of day
+     */
+    fun getStartAndEndOfDate(date: Long): Pair<Long, Long> {
+        val dateInMilliSeconds = date // your date in milli time
+        val cal = Calendar.getInstance()
+
+        // set the calendar time to your date
+        cal.timeInMillis = dateInMilliSeconds
+
+        // get start of the day
+        cal.set(Calendar.HOUR_OF_DAY, 0)
+        cal.set(Calendar.MINUTE, 0)
+        cal.set(Calendar.SECOND, 0)
+        cal.set(Calendar.MILLISECOND, 0)
+        val startOfDayInMilliSeconds = cal.timeInMillis
+        println(startOfDayInMilliSeconds)
+
+        // get end of the day
+        cal.set(Calendar.HOUR_OF_DAY, 23)
+        cal.set(Calendar.MINUTE, 59)
+        cal.set(Calendar.SECOND, 59)
+        cal.set(Calendar.MILLISECOND, 999)
+        val endOfDayInMilliSeconds = cal.timeInMillis
+        println(endOfDayInMilliSeconds)
+        return Pair(startOfDayInMilliSeconds, endOfDayInMilliSeconds)
     }
 
     private fun postStressData(data: ArrayList<StressData>){
