@@ -118,7 +118,6 @@ class MapsViewModel(
         cal.set(Calendar.SECOND, 0)
         cal.set(Calendar.MILLISECOND, 0)
         val startOfDayInMilliSeconds = cal.timeInMillis
-        println(startOfDayInMilliSeconds)
 
         // get end of the day
         cal.set(Calendar.HOUR_OF_DAY, 23)
@@ -126,7 +125,6 @@ class MapsViewModel(
         cal.set(Calendar.SECOND, 59)
         cal.set(Calendar.MILLISECOND, 999)
         val endOfDayInMilliSeconds = cal.timeInMillis
-        println(endOfDayInMilliSeconds)
         return Pair(startOfDayInMilliSeconds, endOfDayInMilliSeconds)
     }
 
