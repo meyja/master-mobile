@@ -52,7 +52,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         // Observe the LiveData for stress data
         viewModel.stressDataList.observe(this) { newData ->
-            Log.d(TAG, "onCreate: empty lat lons")
             latLons = arrayListOf()
             // This callback will be invoked whenever the stressDataList changes.
             // Update the heatmap with the new data.
@@ -68,12 +67,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                         data.lon.toDouble()
                     )
                 } as ArrayList<LatLng>
+                updateHeatMap()
             } else {
                 Log.d(TAG, "onCreate: newData is empty")
                 // Handle the case when newData is null or empty
                 // This could be showing a default view, or a message, etc.
             }
-                updateHeatMap()
+                //updateHeatMap()
         }
     }
 
