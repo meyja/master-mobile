@@ -18,7 +18,7 @@ const val TAG = "MapsRepository"
 
 class MapsRepository() {
     private val client = OkHttpClient()
-    private val baseUrl = "ok.mimic.uiocloud.no"
+    private val baseUrl = "bruh.mimic.uiocloud.no"
     val builder = OkHttpClient.Builder()
     
     interface StressDataCallback {
