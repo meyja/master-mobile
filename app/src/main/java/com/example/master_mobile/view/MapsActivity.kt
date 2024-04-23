@@ -52,7 +52,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         // Observe the LiveData for stress data
         viewModel.stressDataList.observe(this) { newData ->
-            Log.d(TAG, "onCreate: empty lat lons")
             latLons = arrayListOf()
             // This callback will be invoked whenever the stressDataList changes.
             // Update the heatmap with the new data.
@@ -68,22 +67,39 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                         data.lon.toDouble()
                     )
                 } as ArrayList<LatLng>
+                updateHeatMap()
             } else {
                 Log.d(TAG, "onCreate: newData is empty")
                 // Handle the case when newData is null or empty
                 // This could be showing a default view, or a message, etc.
             }
-                updateHeatMap()
+                //updateHeatMap()
         }
     }
 
-
+    /**
+     * This function is called when the options menu is first created.
+     * It inflates the menu from the main_menu resource and returns true to indicate that the menu has been created.
+     *
+     * @param menu The menu to be inflated.
+     * @return True if the menu has been created successfully, false otherwise.
+     */
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         val inflater: MenuInflater = menuInflater
         inflater.inflate(R.menu.main_menu, menu)
         return true
     }
 
+    /**
+     * This function is called when an item in the options menu is selected.
+     * It handles clicks on the "today" and "select_date" menu items:
+     *  - "today": Calls the getLast24Hrs function to fetch stress data for the last 24 hours.
+     *  - "select_date": Launches a MaterialDatePicker to allow the user to select a date range.
+     * For other menu items, it calls the superclass implementation ofonOptionsItemSelected.
+     *
+     * @param item The MenuItem that was selected.
+     * @return True if the item was handled by this activity, false otherwise.
+     */
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.today -> {
@@ -98,6 +114,16 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
+    /**
+     * This function launches a MaterialDatePicker in a dialog to allow the user to select a date range.
+     * It configures the date picker to:
+     *  - Show dates from the beginning of the current year to the end of the current year.
+     *  - Allow selecting a single day (which will be converted to a full day range).
+     *  - Set a default selection to yesterday and today.
+     * It also sets up a listener for the positive button click, where it retrieves the selected date range
+     * and calls the viewModel's fetchStressDataInDataRange function to fetch stress data for that range.
+
+     */
     fun launchDateRangePicker() {
         val today = MaterialDatePicker.todayInUtcMilliseconds()
         val calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT+2"))
@@ -114,7 +140,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         calendar[Calendar.MONTH] = Calendar.DECEMBER
         val decThisYear = calendar.timeInMillis
 
-        // building constraings
+        // building constraints
         val constraintsBuilder =
             CalendarConstraints.Builder().setStart(janThisYear).setEnd(decThisYear)
                 .setFirstDayOfWeek(Calendar.MONDAY).setValidator(DateValidatorPointBackward.now())
@@ -158,25 +184,41 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         //TODO: sørge for at hvis samme dag er valgt, akka ingen range, må man konvertere til samme dag, men fra 00:00-23:59
     }
 
+
     /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
+     * This function is called when the map is ready to be used.
+     * It performs the following actions:
+     *  - Sets the mMap variable to the provided GoogleMap object.
+     *  - Adds a marker for Oslo, Norway to the map.
+     *  - Moves the camera to focus on Oslo with a zoom level of 12.
+     *  - Enables zoom controls on the map.
+     *
+     * @param googleMap The GoogleMap object that is now ready to be used.
      */
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
 
         val oslo = LatLng(59.9, 10.75)
-        mMap.addMarker(MarkerOptions().position(oslo).title("Marker in Oslo"))
+        //mMap.addMarker(MarkerOptions().position(oslo).title("Marker in Oslo"))
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(oslo, 12F))
         mMap.uiSettings.isZoomControlsEnabled = true
 
     }
 
+    /**
+     * This function updates the heatmap visualization on the map with the latest stress data.
+     *
+     * It performs the following steps:
+     *  1. Logs a debug message indicating the update is starting.
+     *  2. Clears any existing heatmap overlay from the map.
+     *  3. Checks if the `latLons` list containing the stress data locations is not empty.
+     *      - If the list is empty: log message indicating no data is available for the selected date.
+     *      - If the list is not empty:
+     *          - Creates a new `HeatmapTileProvider` with the `latLons` data to define the heatmap intensity for each location.
+     *          - Adds a new tile overlay to the map using the created `HeatmapTileProvider`. This overlay will visually represent the heatmap.
+     *          - Stores a reference to the newly added tile overlay in the `heatMapOverlay` variable for potential future removal.
+     *          - Logs a message indicating the heatmap update is complete.
+     */
     fun updateHeatMap() {
         Log.d(TAG, "updateHeatMap: UPDATING")
 
@@ -197,6 +239,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
+    /**
+     * This function fetches stress data for the last 24 hours from the ViewModel.
+     *
+     * It calls the `fetchStressDataLast24Hrs` function on the injected `viewModel` to retrieve stress data points from the past 24 hours.
+     * This data will be used to populate the `latLons` list and subsequently update the heatmap visualization.
+     */
     fun getLast24Hrs(){
         viewModel.fetchStressDataLast24Hrs()
     }
